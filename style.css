@@ -1,0 +1,57 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #0f0a19;
+  color: #ccc;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  padding: 1rem;
+  background: #1a1a2e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #1f1f2f;
+  padding: 1rem;
+  box-sizing: border-box;
+  border-right: 1px solid #333;
+  color: #ccc;
+}
+
+#editor {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+
+#output {
+  background: #111;
+  padding: 1rem;
+  border-top: 1px solid #333;
+  min-height: 150px;
+  overflow-y: auto;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+select, button {
+  padding: 0.5rem;
+  font-size: 1rem;
+  background: #222;
+  color: #ccc;
+  border: none;
+  border-radius: 4px;
+}

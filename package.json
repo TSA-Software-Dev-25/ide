@@ -1,0 +1,14 @@
+{
+  "name": "monaco-electron-ide",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^29.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5"
+  }
+}

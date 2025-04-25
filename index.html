@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IDE</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+</head>
+<body>
+  <header>
+    <label for="language">Language:</label>
+    <select id="language">
+      <option value="python">Python</option>
+      <option value="javascript">JavaScript</option>
+    </select>
+    <button onclick="runCode()">Run Code</button>
+  </header>
+  <div class="container">
+    <div class="sidebar">
+    </div>
+    <div id="editor"></div>
+  </div>
+  <div id="output">Output will appear here...</div>
+
+  <script>
+    let editor;
+    require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs" } });
+    require(["vs/editor/editor.main"], function () {
+      editor = monaco.editor.create(document.getElementById("editor"), {
+        value: "print('Hello, World!')",
+        language: "python",
+        theme: "vs-dark",
+        automaticLayout: true
+      });
+
+      document.getElementById("language").addEventListener("change", function () {
+        const language = this.value;
+        monaco.editor.setModelLanguage(editor.getModel(), language);
+      });
+    });
+
+    async function runCode() {
+      const code = editor.getValue();
+      const language = document.getElementById("language").value;
+
+      try {
+        const response = await fetch("/api/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language, code }),
+        });
+
+        const result = await response.json();
+        document.getElementById("output").textContent = result.output || result.error;
+      } catch (e) {
+        document.getElementById("output").textContent = "Server returned invalid JSON.";
+      }
+    }
+  </script>
+</body>
+</html>
