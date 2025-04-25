@@ -55,3 +55,56 @@ select, button {
   border: none;
   border-radius: 4px;
 }
+
+#notif-container {
+  position: fixed;
+  top: 5rem; 
+  right: 2rem; 
+  display: flex;
+  flex-direction: column; 
+  gap: 0.5rem; 
+  z-index: 1000;
+}
+
+.notification {
+  width: 10rem;
+  position: relative; 
+  background: #222;
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1.25rem;;
+  padding: 1.5rem;
+  border-radius: 4px;
+  word-wrap: break-word;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.2s ease-out forwards;
+}
+
+.notification box-icon {
+  margin-right: 0.4rem;
+  transform: translateY(0.1rem); 
+}
+
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.close-btn {
+  position: absolute; 
+  top: 0.1rem;
+  right: 0.1rem; 
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  padding: 1rem;
+  cursor: pointer;
+}
