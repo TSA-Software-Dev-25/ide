@@ -28,9 +28,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  font-size: 14px;
-  line-height: 1.5;
-  overflow: hidden;
+  font-size: 0.75rem;
 }
 
 header {
@@ -108,12 +106,67 @@ header img {
   font-weight: 600;
 }
 
+.sidebar h1 {
+  font-size: 0.75rem;
+  margin: 0.5rem;
+  font-weight: 750;
+}
+
+#opened-files {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.file-item:hover {
+  background-color: #2a2a3f;
+}
+
+.file-item.active {
+  background-color: #3a3a4f;
+  font-weight: 550;
+}
+
+.sidebar h1 {
+  font-size: 0.75rem;
+  margin: 0.5rem;
+  font-weight: 750;
+}
+
+#opened-files {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.file-item:hover {
+  background-color: #2a2a3f;
+}
+
+.file-item.active {
+  background-color: #3a3a4f;
+  font-weight: 550;
+}
+
 #editor {
   flex: 1;
   height: 100%;
   min-height: 0;
   display: none;
-  position: relative;
 }
 
 #output {
@@ -503,26 +556,25 @@ button:active {
 }
 #notif-container {
   position: fixed;
-  top: 5rem; 
+  bottom: 200px; 
   right: 2rem; 
   display: flex;
-  flex-direction: column; 
+  flex-direction: column-reverse; 
   gap: 0.5rem; 
   z-index: 1000;
 }
 
 .notification {
-  width: 10rem;
+  width: 15rem;
   position: relative; 
   background: #222;
   color: #fff;
-  font-size: 0.75rem;
   line-height: 1.25rem;;
   padding: 1.5rem;
-  border-radius: 4px;
+  border-radius: 5px;
   word-wrap: break-word;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  animation: slideIn 0.2s ease-out forwards;
+  animation: slideIn 0.15s ease-out forwards;
 }
 
 .notification box-icon {
@@ -550,6 +602,108 @@ button:active {
   border: none;
   color: #fff;
   font-size: 1rem;
-  padding: 1rem;
+  margin-left: 1.5rem;
   cursor: pointer;
+}
+
+.close-btn:hover {
+  background-color: transparent;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  width: 19rem;
+  display: none;
+  position: absolute;
+  background-color: #222;
+  color: #fff;
+  min-width: 200px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid #333;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
+.dropdown-content ul {
+  list-style: none;
+  padding: 0 0.3rem;
+  margin: 0;
+  border-bottom: 1px solid #333;
+}
+
+.dropdown-content ul:last-child {
+  border-bottom: none;
+}
+
+.dropdown-content li {
+  display: flex; 
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 5px;
+}
+
+.dropdown-content li:hover {
+  background-color: #1267D3;
+}
+
+.dropdown-content kbd {
+  color: #fff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  align-self: right;
+}
+
+.dropdown-content.show {
+  display: block;
+}
+
+.dropdown-btn.show {
+  background-color: #333;
+}
+
+#welcome-page {
+  top: 0;
+  left: 0;
+  width: 87%;
+  height: 100%;
+  min-height: 0;
+  background-color: #181818;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  z-index: 10; 
+}
+
+#welcome-page img {
+  width: 30rem;
+  margin: 5rem 15rem 0;
+}
+
+#welcome-page h1 {
+  font-size: 1.4rem;
+  margin: -3rem 23rem 10rem;
+  font-weight: 700;
+  color: #d6d6d6;
+}
+
+#welcome-page h2 {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  color: #14A2E3;
+  font-weight: 100;
+}
+
+.welcome-btns {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin: -3rem 23rem 5rem;
 }

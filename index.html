@@ -19,13 +19,13 @@
           <li onclick="openFolder()">Open Folder <kbd>Ctrl + K Ctrl + O</kbd></li>
         </ul>
         <ul>
-          <li onclick="">Save <kbd>Ctrl + S</kbd></li> <!-- Dosent work -->
-          <li onclick="">Save As <kbd>Ctrl + Shift + S</kbd></li> <!-- Dosent work -->
+          <li onclick="">Save <kbd>Ctrl + S</kbd></li> <!-- not working rn -->
+          <li onclick="">Save As <kbd>Ctrl + Shift + S</kbd></li> <!-- not working rn -->
         </ul>
       </div>
     </div>
     <div class="dropdown" id="edit">
-      <button class="dropdown-btn" onclick="toggleDropdown('#edit .dropdown-content', '#edit .dropdown-btn')">Edit</button>
+      <button class="dropdown-btn" onclick="toggleDropdown('#edit .dropdown-content', '#edit .dropdown-btn',)">Edit</button>
       <div class="dropdown-content">
         <ul>
           <li onclick="editor.trigger('keyboard', 'undo', null);">Undo <kbd>Ctrl + Z</kbd></li>
@@ -142,6 +142,11 @@
       if(!logged) {
         window.electronAPI.popWindow();
       }
+    }
+
+    function hideWelcome() {
+      document.getElementById("welcome-page").style.display = "none";
+      document.getElementById("editor").style.display = "block";
     }
   </script>
   <script src="dropdown.js"></script>
