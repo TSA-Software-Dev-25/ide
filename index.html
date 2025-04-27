@@ -9,17 +9,66 @@
 </head>
 <body>
   <header>
-    <label for="language">Language:</label>
+    <img src="images/terraining-logo.png"/>
+    <div class="dropdown" id="file">
+      <button class="dropdown-btn" onclick="toggleDropdown('#file .dropdown-content', '#file .dropdown-btn',)">File</button>
+      <div class="dropdown-content">
+        <ul>
+          <li onclick="openFile()">Open File <kbd>Ctrl + O</kbd></li>
+          <li onclick="openFolder()">Open Folder <kbd>Ctrl + K Ctrl + O</kbd></li>
+        </ul>
+        <ul>
+          <li onclick="">Save <kbd>Ctrl + S</kbd></li> <!-- not working rn -->
+          <li onclick="">Save As <kbd>Ctrl + Shift + S</kbd></li> <!-- not working rn -->
+        </ul>
+      </div>
+    </div>
+    <div class="dropdown" id="edit">
+      <button class="dropdown-btn" onclick="toggleDropdown('#edit .dropdown-content', '#edit .dropdown-btn',)">Edit</button>
+      <div class="dropdown-content">
+        <ul>
+          <li onclick="editor.trigger('keyboard', 'undo', null);">Undo <kbd>Ctrl + Z</kbd></li>
+          <li onclick="editor.trigger('keyboard', 'redo', null);">Redo <kbd>Ctrl + Y</kbd></li>
+        </ul>
+        <ul>
+          <li onclick="editor.trigger('keyboard', 'cut', null);">Cut <kbd>Ctrl + X</kbd></li>
+          <li onclick="Copy()">Copy <kbd>Ctrl + C</kbd></li>
+          <li onclick="Paste()">Paste <kbd>Ctrl + V</kbd></li>
+        </ul>
+        <ul>
+          <li onclick="editor.getAction('actions.find').run();">Find <kbd>Ctrl + F</kbd></li>
+          <li onclick="editor.getAction('editor.action.startFindReplaceAction').run();">Replace <kbd>Ctrl + H</kbd></li>
+        </ul>
+      </div>
+    </div>
     <select id="language">
+      <option value="" hidden selected>Language</option>
       <option value="python">Python</option>
       <option value="javascript">JavaScript</option>
     </select>
-    <button onclick="runCode()">Run Code</button>
+    <div id="header-btns">
+      <button onclick=" ">Connect to Server</button> <!-- not too sure if u still want this -->
+      <button onclick="runCode()">Run Code</button>
+    </div>
   </header>
   
   <div class="container">
     <div id="notif-container"></div>
     <div class="sidebar">
+      <h1>EXPLORER</h1>
+      <ul id="opened-files"></ul>
+    </div>
+    <div id="welcome-page">
+      <img src="images/terraining.png">
+      <h1>smaller footprint for a smarter tomorrow</h1>
+      <div class="welcome-btns" onclick="openFile();">
+        <box-icon size="lg" color="#14A2E3" name="file-blank"></box-icon>
+        <h2>Open File...</h2>
+      </div>
+      <div class="welcome-btns" onclick="openFolder();">
+        <box-icon size="lg" color="#14A2E3" name="folder"></box-icon>
+        <h2>Open Folder...</h2>
+      </div>
     </div>
     <div id="editor"></div>
   </div>
@@ -40,6 +89,10 @@
         const language = this.value;
         monaco.editor.setModelLanguage(editor.getModel(), language);
       });
+
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, function () {
+        openFolder();
+      });
     });
 
     async function runCode() {
@@ -54,12 +107,28 @@
         });
 
         const result = await response.json();
+        showNotification("Code is now running.", "info-circle", "#14A2E3");
         document.getElementById("output").textContent = result.output || result.error;
+
+        if (result.error) {
+          showNotification("Code execution failed.", "error", "#F48872");
+        } else {
+          showNotification("Output received from server.", "check-circle", "#5FC234");
+        }
+
       } catch (e) {
         document.getElementById("output").textContent = "Server returned invalid JSON.";
+        showNotification("An error occurred while running the code.", "error", "#F48872");
       }
     }
+
+    function hideWelcome() {
+      document.getElementById("welcome-page").style.display = "none";
+      document.getElementById("editor").style.display = "block";
+    }
   </script>
+  <script src="dropdown.js"></script>
   <script src="notification.js"></script>
+  <script src="files.js"></script>
 </body>
 </html>
