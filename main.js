@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, Menu } = require("electron");
 const path = require("path");
 const { exec } = require("child_process");
 
@@ -12,6 +12,8 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
     },
   });
+
+  Menu.setApplicationMenu(null);
 
   win.loadURL("http://localhost:3000"); // Load frontend from backend server
 }
