@@ -118,3 +118,32 @@ async function saveFile() {
     showNotification("Failed to save file.", "error", "#F48872");
   }
 }
+
+async function sendFile() {
+  const fileName = getActiveFileName();
+  const outputName = fileName.replace(/\.py$/, ".json");
+
+  const handle = fileHandles[fileName];
+  if (!handle || !handle.path) {
+    showNotification("No file open to send.", "error", "#F48872")
+    return
+  } else {
+    code = editor.getValue();
+    showNotification("Sending File...", "info", "#CCCCCC")
+    const res = await window.electronAPI.sendFile(code, handle.path)
+    if (res) {
+      showNotification("Output received!", "check-circle", "#5FC234")
+      const jsonPath = handle.path.replace(/\.py$/, '.json');
+      const jsonContent = await window.electronAPI.readFile(jsonPath);
+      if (!openedFiles.includes(outputName)) {
+        openedFiles.push(outputName);
+        fileHandles[outputName] = { path: jsonPath, name: outputName }
+        updateSidebar();
+      }
+      editor.setValue(jsonContent)
+      setActiveFile(outputName)
+    } else {
+      showNotification("Error sending to server.", "error", "#F48872")
+    }
+  }
+}

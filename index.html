@@ -48,7 +48,8 @@
       <option value="javascript">JavaScript</option>
     </select>
     <div id="header-btns">
-      <button onclick="popWindow()">Connect to Server</button>
+      <button onclick="sendFile()" style="display:none" id="send-button">Send to Server</button>
+      <button onclick="popWindow()">Connect to Server</button> <!-- not too sure if u still want this --> <!-- i want this -->
       <button onclick="runCode()">Run Code</button>
     </div>
   </header>
@@ -148,6 +149,9 @@
       document.getElementById("welcome-page").style.display = "none";
       document.getElementById("editor").style.display = "block";
     }
+    window.electronAPI.onLoginChange((success) => {
+      document.getElementById("send-button").style.display = success ? "flex" : "none";
+    })
   </script>
   <script src="dropdown.js"></script>
   <script src="notification.js"></script>

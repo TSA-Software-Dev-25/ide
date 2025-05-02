@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFolder: () => ipcRenderer.invoke('open-folder'),
   saveFile: (filepath, content) => ipcRenderer.invoke('save-file', filepath, content),
   popWindow: () => ipcRenderer.send('pop-window'),
-  readFile: (filepath) => ipcRenderer.invoke('read-file', filePath)
+  readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),
+  onLoginChange: (callback) => ipcRenderer.on("update-login", (_event, status) => callback(status) ),
+  sendFile: (code, filepath) => ipcRenderer.invoke('send-file', code, filepath)
 });
