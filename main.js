@@ -1,9 +1,10 @@
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require("electron");
 const path = require("path");
 const { exec } = require("child_process");
 const forge = require("node-forge");
 const crypto = require("crypto");
 const fs = require("fs");
+const fsp = require("fs").promises;
 const { v4: uuidv4 } = require('uuid');
 
 let win;
@@ -20,7 +21,7 @@ function createWindow() {
     },
   });
 
-  Menu.setApplicationMenu(null);
+  // Menu.setApplicationMenu(null);
 
   win.loadURL("http://localhost:3000"); // Load frontend from backend server
 }
@@ -53,6 +54,39 @@ app.whenReady().then(() => {
   });
   buildUUID();
   buildKeys();
+
+  ipcMain.handle("open-file", async () => {
+    const {canceled, filePaths} = await dialog.showOpenDialog({
+      properties: ["openFile"]
+    });
+    if (canceled || !filePaths.length) {console.log("opening canceled"); return null;}
+    const filePath = filePaths[0];
+    const content = await fsp.readFile(filePath, "utf8");
+    return { path: filePath, content };
+  });
+
+  ipcMain.handle("open-folder", async () => {
+    const {canceled, filePaths} = await dialog.showOpenDialog({
+      properties: ["openDirectory"]
+    });
+    if (canceled || !filePaths.length) return null;
+    const results = [];
+    for (const dir of filePaths) {
+      const names = await fsp.readdir(dir);
+      for (const name of names) {
+        const p = path.join(dir, name);
+        if ((await fsp.stat(p)).isFile()) {
+          const content = await fsp.readFile(p, "utf8");
+          results.push({ path: p, name, content });
+        }
+      }
+    }
+    return results;
+  });
+
+  ipcMain.handle("read-file", async (_event, filePath) => {
+    return fsp.readFile(filePath, "utf8");
+  });
 
   ipcMain.handle("create-account", async (event, username, pass) => {
     console.log("Creating account with ", username, pass);
@@ -104,7 +138,7 @@ app.whenReady().then(() => {
           key: publicKeyClean
         }),
       });
-
+      console.log("login response", res);
       if (res.status !== 200) {
         if (res.status === 403) return "Invalid credentials!";
         if (res.status === 400) return "Bad request!";
@@ -122,7 +156,7 @@ app.whenReady().then(() => {
         },
         encryptedToken
       );
-
+      console.log("decryptedBuffer", decryptedBuffer);
       const tokenString = decryptedBuffer.toString('utf8');
       token = Buffer.from(buildPlaintext(tokenString), 'utf8').toString('base64');
       return "Login successful!";
@@ -158,7 +192,17 @@ app.whenReady().then(() => {
 
   ipcMain.handle("run", async (_event, data) => { // send code to server
     return "";
-  })
+  });
+
+  ipcMain.handle("save-file", async (_evt, path, content) => {
+    try {
+      await fsp.writeFile(path, content, "utf8");
+      return true;
+    } catch (error) {
+      console.error("Error saving file:", error);
+      return false;
+    }
+  });
 })
 
 

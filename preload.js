@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('open-file'),
-  saveFile: (data) => ipcRenderer.invoke('save-file', data),
-  popWindow: () => ipcRenderer.send('pop-window')
+  openFolder: () => ipcRenderer.invoke('open-folder'),
+  saveFile: (filepath, content) => ipcRenderer.invoke('save-file', filepath, content),
+  popWindow: () => ipcRenderer.send('pop-window'),
+  readFile: (filepath) => ipcRenderer.invoke('read-file', filePath)
 });
