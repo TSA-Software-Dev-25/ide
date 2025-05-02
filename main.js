@@ -37,6 +37,13 @@ app.whenReady().then(() => {
   // Wait for the server to boot
   setTimeout(createWindow, 2000);
 
+  ipcMain.on("login-change", (success) => {
+    if (success) {
+      win.webContents.send('update-login', true)
+    }
+    else win.webContents.send('update-login', false)
+  })
+
   ipcMain.on("pop-window", () => {
     const child = new BrowserWindow({
       width: 400,
@@ -190,8 +197,47 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle("run", async (_event, data) => { // send code to server
-    return "";
+  ipcMain.handle("send-file", async (_event, code, filePath) => { 
+    console.log("sending file", code, filePath);
+    let fileName = filePath.split('/').pop();
+    console.log(fileName)
+    let newFileName = filePath.replace(/\.py$/, ".json");
+    console.log(newFileName)
+    const token = fs.readFileSync(path.join(__dirname, "UUID.uuid")).toString();
+    const codeB64 = forge.util.encode64(code);
+    try {
+      console.log("trying fetch")
+      const res = await fetch("http://localhost:8080/exchange/forward", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: token,
+          task: {
+            command: "run-file",
+            file_name: fileName,
+            file_content: codeB64
+          }
+        })
+      })
+      const output = await res.text();
+      if (res) {
+        let toWrite;
+        try {
+          const obj = JSON.parse(output);
+          toWrite = JSON.stringify(obj, null, 4)
+        } catch {
+          toWrite = output
+        }
+        fs.writeFileSync(newFileName, toWrite, "utf8")
+        return true
+      } else {
+        return false
+      }
+    } catch (e) {
+      throw new Error("Error when trying to open file")
+    }
   });
 
   ipcMain.handle("save-file", async (_evt, path, content) => {

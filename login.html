@@ -36,6 +36,10 @@
           console.log("sending to login()");
           const text = await window.api.login(username, password);
           document.getElementById("login-button").innerText = text;
+          if (text == "Login successful!") {
+            console.log("Sending: " + true)
+            window.api.login_change(true)
+          }
         } catch (err) {
             console.error("Error during account login:", err);
             alert("Failed to login to account.");
