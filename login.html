@@ -8,15 +8,70 @@
   </head>
   <body>
     <div class="form">
+      <h1>Enter Information</h1>
       <div class="info">
         <input type="text" id="username" placeholder="Username" />
         <input type="password" id="password" placeholder="Password" />
       </div>
-      <button class="send">Login</button>
+      <button class="send" onclick="login()" id="login-button">Login</button>
+      <button class="send" onclick="create()" id="create-button" style="display:none">Create Account</button>
     </div>
     <div class="options">
-      <button id="sign"></button>
-      <button id="log"></button>
+      <button id="create" onclick="switchCreate()">Don't have an account?</button>
+      <button id="sign" onclick="switchLogin()" style="display: none;" >Already have an account?</button>
     </div>
+    <script>
+      const createSwitch = document.getElementById("create");
+      const signSwitch = document.getElementById("sign");
+      const createButton = document.getElementById("create-button");
+      const loginButton = document.getElementById("login-button");
+      async function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        if (username === "" || password === "") {
+          alert("Please fill in all fields.");
+          return;
+        }
+        try {
+          console.log("sending to login()");
+          const text = await window.api.login(username, password);
+          document.getElementById("login-button").innerText = text;
+        } catch (err) {
+            console.error("Error during account login:", err);
+            alert("Failed to login to account.");
+        }
+      }
+      async function create() {
+        console.log("sending to create()");
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        if (username === "" || password === "") {
+          alert("Please fill in all fields.");
+          return;
+        }
+        try {
+          const text = await window.api.create_account(username, password);
+          document.getElementById("create-button").innerText = text;
+        } catch (err) {
+            console.error("Error during account creation:", err);
+            alert("Failed to create account.");
+        }
+      }
+      function switchCreate() {
+        loginButton.style.display = "none";
+        createButton.style.display = "block";
+
+        createSwitch.style.display = "none";
+        signSwitch.style.display = "block";
+      }
+      function switchLogin() {
+        loginButton.style.display = "block";
+        createButton.style.display = "none";
+
+        createSwitch.style.display = "block";
+        signSwitch.style.display = "none";
+      }
+    </script>
   </body>
 </html>

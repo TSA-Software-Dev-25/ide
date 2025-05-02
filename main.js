@@ -3,6 +3,8 @@ const path = require("path");
 const { exec } = require("child_process");
 const forge = require("node-forge");
 const crypto = require("crypto");
+const fs = require("fs");
+const { v4: uuidv4 } = require('uuid');
 
 let win;
 let token; 
@@ -36,8 +38,8 @@ app.whenReady().then(() => {
 
   ipcMain.on("pop-window", () => {
     const child = new BrowserWindow({
-      width: 300,
-      height: 200,
+      width: 400,
+      height: 300,
       parent: win,
       modal: true,
       webPreferences: {
@@ -53,82 +55,105 @@ app.whenReady().then(() => {
   buildKeys();
 
   ipcMain.handle("create-account", async (event, username, pass) => {
-    const passwordFull = buildPlaintext(pass);
-    const encryptedPassword = await encryptPassword(passwordFull);
+    console.log("Creating account with ", username, pass);
+    try {
+      const passwordFull = buildPlaintext(pass);
+      const encryptedPassword = await encryptPassword(passwordFull);
 
-    const res = await fetch("http://localhost:8080/accounts/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: username,
-        password: encryptedPassword,
-      }),
-    });
+      const res = await fetch("http://localhost:8080/accounts/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: encryptedPassword,
+        }),
+      });
 
-    if (res.status === 200) return "Account created successfully!";
-    if (res.status === 403) return "Username already exists!";
-    if (res.status === 400) return "Bad request!";
-    return "Unknown error!";
+      if (res.status === 200) return "Account created successfully!";
+      if (res.status === 403) return "Username already exists!";
+      if (res.status === 400) return "Bad request!";
+      return "Unknown error!";
+    } catch (error) {
+      console.error("Create account error:", error);
+      throw new Error("Account creation failed unexpectedly");
+    }
   });
 
   ipcMain.handle("login", async (_event, username, pass) => {
+    console.log("starting login in main");
     const passwordFull = buildPlaintext(pass);
     const publicKey = fetchPublic();
+    const publicKeyClean = publicKey
+      .replace('-----BEGIN PUBLIC KEY-----', '')
+      .replace('-----END PUBLIC KEY-----', '')
+      .replace(/\n/g, '');
     const privateKey = fetchPrivate()
     const encryptedPassword = await encryptPassword(passwordFull);
 
-    const res = await fetch("http://localhost:8080/accounts/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: username,
-        password: encryptedPassword,
-        key: publicKey
-      }),
-    });
+    try {
+      const res = await fetch("http://localhost:8080/accounts/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: encryptedPassword,
+          key: publicKeyClean
+        }),
+      });
 
-    if (res.status !== 200) {
-      if (res.status === 403) return "Invalid credentials!";
-      if (res.status === 400) return "Bad request!";
-      if (res.status === 500) return "Server error!";
-      return "Unknown error!";
+      if (res.status !== 200) {
+        if (res.status === 403) return "Invalid credentials!";
+        if (res.status === 400) return "Bad request!";
+        if (res.status === 500) return "Server error!";
+        return "Unknown error!";
+      }
+
+      const encryptedTokenBase64 = await res.text();
+      const encryptedToken = Buffer.from(encryptedTokenBase64, 'base64');
+
+      const decryptedBuffer = crypto.privateDecrypt(
+        {
+          key: privateKey,
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        },
+        encryptedToken
+      );
+
+      const tokenString = decryptedBuffer.toString('utf8');
+      token = Buffer.from(buildPlaintext(tokenString), 'utf8').toString('base64');
+      return "Login successful!";
+    } catch (error) {
+      console.error("Login error:", error);
+      throw new Error("Login failed unexpectedly");
     }
-
-    const encryptedTokenBase64 = await res.text();
-    const encryptedToken = Buffer.from(encryptedTokenBase64, 'base64');
-
-    token = crypto.privateDecrypt(
-      {
-        key: privateKey,
-        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-        oaepHash: 'sha256',
-      },
-      encryptedToken
-    );
-    return "Login successful!";
   });
 
   ipcMain.handle("logout", async (_event) => {
-    const res = await fetch("http://localhost:8080/accounts/logout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        token: token,
-      }),
-    });
+    try {
+      const res = await fetch("http://localhost:8080/accounts/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: token,
+        }),
+      });
 
-    if (res.status == 200) {
-    token = null;
-    return "Logged out successfully!";
+      if (res.status == 200) {
+      token = null;
+      return "Logged out successfully!";
+      }
+      if (res.status == 403) return "Invalid token!";
+      else return "Unknown error!";
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw new Error("Logout failed unexpectedly")
     }
-    if (res.status == 403) return "Invalid token!";
-    else return "Unknown error!";
   });
 
   ipcMain.handle("run", async (_event, data) => { // send code to server
@@ -151,12 +176,28 @@ async function encryptPassword(password) {
   return encryptedBase64;
 }
 
-function buildPlaintext(pass) {}
+function buildPlaintext(pass) {
+  const uuidPath = path.join(__dirname, "UUID.uuid");
 
-function buildUUID() {}
+  if (!fs.existsSync(uuidPath)) {
+    buildUUID();
+  }
+
+  const uuid = fs.readFileSync(uuidPath).toString();
+  return pass + ":ID=" + uuid;
+}
+
+function buildUUID() {
+  if (!fs.existsSync(path.join(__dirname, "UUID.uuid"))) {
+    const uuid = uuidv4();
+    fs.writeFileSync(path.join(__dirname, "UUID.uuid"), uuid);
+  }
+}
 
 function buildKeys() {
-  if (true) { //replace with checking keys
+  const publicPath = path.join(__dirname, "public_key.pem");
+  const privatePath = path.join(__dirname, "private_key.pem");
+  if (!fs.existsSync(publicPath) && !fs.existsSync(privatePath)) {
     const { publicKey, privateKey } = crypto.generateKeyPairSync(
       'rsa', {
         modulusLength: 2048
@@ -165,16 +206,26 @@ function buildKeys() {
 
     const publicKeyPEM = publicKey.export({ type: 'spki', format: 'pem' });
     const privateKeyPEM = privateKey.export({ type: 'pkcs8', format: 'pem' });
-
-    const publicKeyClean = publicKeyPEM // THIS IS THE KEY FUTURE ME
-    .replace('-----BEGIN PUBLIC KEY-----', '')
-    .replace('-----END PUBLIC KEY-----', '')
-    .replace(/\n/g, '');
     
-    // save keys to file
+    fs.writeFileSync(publicPath, publicKeyPEM);
+    fs.writeFileSync(privatePath, privateKeyPEM);
   }
 }
 
-function fetchPrivate() {} // fetch personal private key
+function fetchPrivate() {
+  const privateKeyPath = path.join(__dirname, "private_key.pem");
+  if (!fs.existsSync(privateKeyPath)) {
+    buildKeys();
+  }
+  const privateKeyPEM = fs.readFileSync(privateKeyPath).toString();
+  return privateKeyPEM
+} // fetch personal private key
 
-function fetchPublic() {} // fetch personal public key
+function fetchPublic() {
+  const publicKeyPath = path.join(__dirname, "public_key.pem");
+  if (!fs.existsSync(publicKeyPath)) {
+    buildKeys();
+  }
+  const publicKeyPEM = fs.readFileSync(publicKeyPath).toString();
+  return publicKeyPEM
+} // fetch personal public key

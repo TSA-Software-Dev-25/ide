@@ -257,3 +257,38 @@ button:hover, select:hover {
   gap: 1rem;
   margin: -3rem 23rem 5rem;
 }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.info {
+  justify-content: center;
+  display: flex; 
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form h1 {
+  text-align: center;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.form input {
+  border-radius: 10px;
+}
+
+.send {
+  width: 35%;
+  background-color: #14A2E3;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display:block;
+}
