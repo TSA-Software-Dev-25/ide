@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terraining - Login</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+  </head>
+  <body>
+    <div id="notif-container"></div>
+    
+    <div class="form">
+      <h1>Enter Information</h1>
+      <div class="info">
+        <input type="text" id="username" placeholder="Username" />
+        <input type="password" id="password" placeholder="Password" />
+      </div>
+      <button class="send" onclick="login()" id="login-button">Login</button>
+      <button class="send" onclick="create()" id="create-button" style="display:none">Create Account</button>
+    </div>
+    <div class="options">
+      <button id="create" onclick="switchCreate()">Don't have an account?</button>
+      <button id="sign" onclick="switchLogin()" style="display: none;" >Already have an account?</button>
+    </div>
+    
+    <script>
+      const createSwitch = document.getElementById("create");
+      const signSwitch = document.getElementById("sign");
+      const createButton = document.getElementById("create-button");
+      const loginButton = document.getElementById("login-button");
+      
+      async function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        
+        if (username === "" || password === "") {
+          showNotification("Please fill in all fields.", "error-circle", "#F48872");
+          return;
+        }
+        
+        try {
+          console.log("sending to login()");
+          const text = await window.api.login(username, password);
+          document.getElementById("login-button").innerText = text;
+          showNotification("Login successful!", "check-circle", "#5FC234");
+        } catch (err) {
+          console.error("Error during account login:", err);
+          showNotification("Failed to login to account.", "error-circle", "#F48872");
+        }
+      }
+      
+      async function create() {
+        console.log("sending to create()");
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        if (username === "" || password === "") {
+          showNotification("Please fill in all fields.", "error-circle", "#F48872");
+          return;
+        }
+        
+        try {
+          const text = await window.api.create_account(username, password);
+          document.getElementById("create-button").innerText = text;
+          showNotification("Account created successfully!", "check-circle", "#5FC234");
+        } catch (err) {
+          console.error("Error during account creation:", err);
+          showNotification("Failed to create account.", "error-circle", "#F48872");
+        }
+      }
+      
+      function switchCreate() {
+        loginButton.style.display = "none";
+        createButton.style.display = "block";
+
+        createSwitch.style.display = "none";
+        signSwitch.style.display = "block";
+      }
+      
+      function switchLogin() {
+        loginButton.style.display = "block";
+        createButton.style.display = "none";
+
+        createSwitch.style.display = "block";
+        signSwitch.style.display = "none";
+      }
+      
+      function showNotification(message, icon, color) {
+        const notifContainer = document.querySelector('#notif-container');
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.style.borderLeftColor = color;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = function() {
+          notification.remove();
+        };
+        
+        notification.innerHTML = `<box-icon name="${icon}" color="${color}"></box-icon>${message}`;
+        notification.appendChild(closeBtn);
+        
+        notifContainer.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>
