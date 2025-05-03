@@ -44,6 +44,9 @@
           const text = await window.api.login(username, password);
           document.getElementById("login-button").innerText = text;
           showNotification("Login successful!", "check-circle", "#5FC234");
+          if (text == "Login successful!") {
+            window.api.login_change(true);
+          }
         } catch (err) {
           console.error("Error during account login:", err);
           showNotification("Failed to login to account.", "error-circle", "#F48872");
