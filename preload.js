@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   popWindow: () => ipcRenderer.send('pop-window'),
   readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),
   onLoginChange: (callback) => ipcRenderer.on("update-login", (_event, status) => callback(status) ),
-  sendFile: (code, filepath) => ipcRenderer.invoke('send-file', code, filepath)
+  sendFile: (code, filepath) => ipcRenderer.invoke('send-file', code, filepath),
+  logout: () => ipcRenderer.invoke('logout'),
 });

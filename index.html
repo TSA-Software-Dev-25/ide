@@ -49,7 +49,8 @@
     </select>
     <div id="header-btns">
       <button onclick="sendFile()" id="send-button" style="display: none">Send to Server</button>
-      <button onclick="popWindow()">Connect to Server</button> <!-- not too sure if u still want this --> <!-- i want this -->
+      <button onclick="popWindow()" id="connect-button">Connect to Server</button> <!-- not too sure if u still want this --> <!-- i want this -->
+      <button onclick="logout()" id="logout-button" style="display: none">Logout</button>
       <button onclick="runCode()">Run Code</button>
     </div>
   </header>
@@ -80,6 +81,9 @@
   <div id="output">Output will appear here...</div>
 
   <script>
+    const send_button = document.getElementById("send-button");
+    const connect_button = document.getElementById("connect-button");
+    const logout_button = document.getElementById("logout-button");
     let logged = false;
     let editor;
     require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs" } });
@@ -145,8 +149,22 @@
       }
     }
 
+    async function logout() {
+      const res = await window.electronAPI.logout();
+      if (res) {
+        showNotification("Logged out successfully.", "check-circle", "#5FC234");
+        send_button.style.display = "none";
+        connect_button.style.display = "flex";
+        logout_button.style.display = "none";
+      } else {
+        showNotification("Failed to log out.", "error-circle", "#F48872");
+      }
+    }
+
     window.electronAPI.onLoginChange((success) => {
-      document.getElementById("send-button").style.display = success ? "flex" : "none";
+      send_button.style.display = success ? "flex" : "none";
+      connect_button.style.display = success ? "none" : "flex";
+      logout_button.style.display = success ? "flex" : "none";
     })
   </script>
   <script src="dropdown.js"></script>
