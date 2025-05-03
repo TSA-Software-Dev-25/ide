@@ -98,7 +98,8 @@ app.whenReady().then(() => {
   ipcMain.handle("create-account", async (event, username, pass) => {
     console.log("Creating account with ", username, pass);
     try {
-      const passwordFull = buildPlaintext(pass);
+      const hashedPass = hashPass(pass);
+      const passwordFull = buildPlaintext(hashedPass);
       const encryptedPassword = await encryptPassword(passwordFull);
 
       const res = await fetch("http://localhost:8080/accounts/create", {
@@ -124,7 +125,8 @@ app.whenReady().then(() => {
 
   ipcMain.handle("login", async (_event, username, pass) => {
     console.log("starting login in main");
-    const passwordFull = buildPlaintext(pass);
+    const hashedPass = hashPass(pass);
+    const passwordFull = buildPlaintext(hashedPass);
     const publicKey = fetchPublic();
     const publicKeyClean = publicKey
       .replace('-----BEGIN PUBLIC KEY-----', '')
@@ -278,10 +280,8 @@ function buildPlaintext(pass) {
 }
 
 function buildUUID() {
-  if (!fs.existsSync(path.join(__dirname, "UUID.uuid"))) {
-    const uuid = uuidv4();
-    fs.writeFileSync(path.join(__dirname, "UUID.uuid"), uuid);
-  }
+  const uuid = uuidv4();
+  fs.writeFileSync(path.join(__dirname, "UUID.uuid"), uuid);
 }
 
 function buildKeys() {
@@ -319,3 +319,7 @@ function fetchPublic() {
   const publicKeyPEM = fs.readFileSync(publicKeyPath).toString();
   return publicKeyPEM
 } // fetch personal public key
+
+function hashPass(pass) {
+  return crypto.createHash("sha256").update(pass).digest("hex");
+}
