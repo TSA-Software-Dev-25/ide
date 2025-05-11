@@ -43,8 +43,8 @@
           console.log("sending to login()");
           const text = await window.api.login(username, password);
           document.getElementById("login-button").innerText = text;
-          showNotification("Login successful!", "check-circle", "#5FC234");
           if (text == "Login successful!") {
+            showNotification("Login successful!", "check-circle", "#5FC234");
             window.api.login_change(true);
           }
         } catch (err) {
