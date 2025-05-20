@@ -1,7 +1,7 @@
 # TSA Software Dev 2025
 ## Getting started
 Before cloning the repo make sure you have the correct dependices   
-You should have npm and node [installed] (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)   
+You should have npm and node [installed](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)   
 Run these commands to get started after cloning the repo   
 ```console
 npm install
