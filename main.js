@@ -6,10 +6,21 @@ const crypto = require("crypto");
 const fs = require("fs");
 const fsp = require("fs").promises;
 const { v4: uuidv4 } = require("uuid");
+const owasp = require("owasp-password-strength-test")
 
+const forwardID = uuidv4() // ID for identifying file sender
 let win;
 let token;
 let url = "http:/localhost:8080";
+
+// defaults for newly created passwords
+owasp.config({
+  allowPassphrases: true, 
+  maxLength: 127,
+  minLength: 8,
+  minPhraseLength: 15,
+  minOptionalTestsToPass: 4
+})
 
 function createWindow() {
   win = new BrowserWindow({
@@ -41,7 +52,7 @@ app.whenReady().then(() => {
   /*
   Takes in login success
   Changes login status
-  Used to get hide/show buttons in idex.html
+  Used to get hide/show buttons in index.html
   Sends result to parent window
   */
   ipcMain.on("login-change", (success) => {
@@ -62,14 +73,13 @@ app.whenReady().then(() => {
       modal: true,
       webPreferences: {
         nodeIntegration: false,
-        preload: path.join(__dirname, "login_preload.js"),
+        preload: path.join(__dirname, "login_preload.js"), // points to preload script
       },
     });
-    child.loadFile(path.join(__dirname, "login.html"));
+    child.loadFile(path.join(__dirname, "login.html")); // points to html file 
     child.setResizable(false);
     child.setMenu(null);
   });
-  buildUUID(); // create token for sending in files if not already there
   buildKeys(); // create private/public keys if they're not there
 
   /*
@@ -123,18 +133,22 @@ app.whenReady().then(() => {
     return fsp.readFile(filePath, "utf8");
   });
 
+  ipcMain.handle("input-validate", (pass) => {
+    const res = owasp.test(pass);
+    if (!res.strong) {
+      return res.errors[0]
+    } else {
+      return ""
+    }
+  })
+
   /*
   Takes in username and password from user
   Used to create account
-  1) Creates hash of password with hashPass()
-  2) Adds UUID to hash with buildPlaintext()
-  3) Encrypts load with encryptPassword() (server pub key)
-  5) Sends load to server via post
   Returns string (response)
   */
   ipcMain.handle("create-account", async (event, username, pass) => {
-    console.log("Creating account with ", username, pass);
-    try {
+    try { // try to build vars
       const hashedPass = hashPass(pass);
       const passwordFull = buildPlaintext(hashedPass);
       const encryptedPassword = await encryptPassword(passwordFull);
@@ -163,29 +177,21 @@ app.whenReady().then(() => {
   /*
   Takes in username and password from user
   Used to login 
-  2) Creates hash of password with hashPass()
-  3) Gets personal public and private key
-  4) Adds UUID to hash with buildPlaintext()
-  5) Encrypts load with encryptPassword() (server pub key)
-  6) Sends load and public key to server
-  Expects server to reply with unique token 
-  7) Decrypts the token with personal private key
-  Saves token in memory to logout later 
   Returns string (response)
   */
   ipcMain.handle("login", async (_event, username, pass) => {
-    console.log("starting login in main");
-    const hashedPass = hashPass(pass);
-    const passwordFull = buildPlaintext(hashedPass);
-    const publicKey = fetchPublic();
-    const publicKeyClean = publicKey
+    const hashedPass = hashPass(pass); // hashes the password
+    const passwordFull = buildPlaintext(hashedPass); // adds UUID to password ex. (hash:ID=UUID)
+    // the public key will be used by the server to create a unique logout token
+    const publicKey = fetchPublic(); // gets personal public key
+    const publicKeyClean = publicKey // strips the public key for kotlin compatability 
       .replace("-----BEGIN PUBLIC KEY-----", "")
       .replace("-----END PUBLIC KEY-----", "")
       .replace(/\n/g, "");
-    const privateKey = fetchPrivate();
-    const encryptedPassword = await encryptPassword(passwordFull);
+    const privateKey = fetchPrivate(); // gets personal private key
+    const encryptedPassword = await encryptPassword(passwordFull); // encrypts passwordFull with server public key
 
-    try {
+    try { // try to send POST req
       const res = await fetch(url + "/accounts/login", {
         method: "POST",
         headers: {
@@ -205,6 +211,7 @@ app.whenReady().then(() => {
         return "Unknown error!";
       }
 
+      // Start of decrypting the logout token from the server
       const encryptedTokenBase64 = await res.text();
       const encryptedToken = Buffer.from(encryptedTokenBase64, "base64");
 
@@ -215,9 +222,8 @@ app.whenReady().then(() => {
         },
         encryptedToken
       );
-      console.log("decryptedBuffer", decryptedBuffer);
-      const tokenString = decryptedBuffer.toString("utf8");
-      token = Buffer.from(buildPlaintext(tokenString));
+      const tokenString = decryptedBuffer.toString("utf8"); 
+      token = Buffer.from(buildPlaintext(tokenString)); // This is the logout token
       return "Login successful!";
     } catch (error) {
       console.error("Login error:", error);
@@ -231,8 +237,8 @@ app.whenReady().then(() => {
   Returns string (response)
   */
   ipcMain.handle("logout", async (_event) => {
-    const encryptedToken = await encryptPassword(token);
-    try {
+    const encryptedToken = await encryptPassword(token); // encrypts logout token with server public key
+    try { // try to send POST req
       const res = await fetch(url + "/accounts/logout", {
         method: "POST",
         headers: {
@@ -242,13 +248,11 @@ app.whenReady().then(() => {
           token: encryptedToken,
         }),
       });
-      console.log(res);
       if (res.status == 200) {
         token = null;
         return true;
       } else return false;
     } catch (error) {
-      console.error("Logout error:", error);
       throw new Error("Logout failed unexpectedly");
     }
   });
@@ -256,25 +260,19 @@ app.whenReady().then(() => {
   /*
   Takes in current code in editor and filePath
   Used to send file
-  
   */
   ipcMain.handle("send-file", async (_event, code, filePath) => {
-    console.log("sending file", code, filePath);
     let fileName = filePath.split("/").pop();
-    console.log(fileName);
-    let newFileName = filePath.replace(/\.py$/, ".json");
-    console.log(newFileName);
-    const token = fs.readFileSync(path.join(__dirname, "UUID.uuid")).toString();
-    const codeB64 = forge.util.encode64(code);
-    try {
-      console.log("trying fetch");
+    let newFileName = filePath.replace(/\.py$/, ".json"); // fileName for code to be written 
+    const codeB64 = forge.util.encode64(code); // the 'code' is just the text from the active open file
+    try { // try to send POST req 
       const res = await fetch(url + "/exchange/forward", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          token: token,
+          token: forwardID,
           task: {
             command: "run-file",
             file_name: fileName,
@@ -284,14 +282,14 @@ app.whenReady().then(() => {
       });
       const output = await res.text();
       if (res) {
-        let toWrite;
-        try {
+        let toWrite; // the strigified JSON res
+        try { // try to parse JSON
           const obj = JSON.parse(output);
           toWrite = JSON.stringify(obj, null, 4);
         } catch {
           toWrite = output;
         }
-        fs.writeFileSync(newFileName, toWrite, "utf8");
+        fs.writeFileSync(newFileName, toWrite, "utf8"); // writes the JSON as a file so index.html can open it up
         return true;
       } else {
         return false;
@@ -301,8 +299,13 @@ app.whenReady().then(() => {
     }
   });
 
+  /*
+  Takes in the path of file and file content
+  Used to save-file
+  returns bool
+  */
   ipcMain.handle("save-file", async (_evt, path, content) => {
-    try {
+    try { // try to write file
       await fsp.writeFile(path, content, "utf8");
       return true;
     } catch (error) {
@@ -342,16 +345,6 @@ async function encryptPassword(password) {
 function buildPlaintext(pass) {
   const uuid = uuidv4();
   return pass + ":ID=" + uuid;
-}
-
-/*
-Writes UUID to file (UUID.uuid)
-Used for file transfer
-Returns none
-*/
-function buildUUID() {
-  const uuid = uuidv4();
-  fs.writeFileSync(path.join(__dirname, "UUID.uuid"), uuid);
 }
 
 /*
