@@ -8,6 +8,6 @@ npm install
 npm start
 ```
 ## Usage
-In order to send a file you must first log in to the server
-Create an account if you don't already have one
-The current code in the editor is what will be sent so there's no need to save before hand
+In order to send a file you must first log in to the server   
+Create an account if you don't already have one   
+The current code in the editor is what will be sent so there's no need to save before hand   
